@@ -1,6 +1,6 @@
 import asyncio
-import os 
-
+import os
+from aiohttp import web
 
 from aiogram import Bot, Dispatcher, Router  # Importing necessary modules for the Telegram bot
 from aiogram.filters import CommandStart  # To handle the "/start" command
@@ -230,6 +230,25 @@ async def main():
     await bot.delete_webhook()  # Delete any existing webhook
     dp.include_router(router)  # Add the router to the dispatcher
     await dp.start_polling(bot)  # Start listening for updates
+
+    # Create a simple aiohttp web server
+    async def handle(request):
+        return web.Response(text="Hello, World!")
+
+    app = web.Application()
+    app.router.add_get('/', handle)
+
+    # Get the port from the environment variable
+    port = int(os.environ.get('PORT', 8080))
+    runner = web.AppRunner(app)
+    await runner.setup()
+    site = web.TCPSite(runner, '0.0.0.0', port)
+    await site.start()
+    print(f"Server started at http://0.0.0.0:{port}")
+
+    # Keep the server running
+    while True:
+        await asyncio.sleep(3600)
 
 # Run the main function if this file is executed
 if __name__ == "__main__":
