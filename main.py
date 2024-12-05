@@ -1,4 +1,4 @@
-import asyncio
+from this code import asyncio
 import os
 from aiohttp import web
 
@@ -113,13 +113,28 @@ async def start_command_handler(message: Message, command: CommandStart):
 async def keyboard_answers(message: Message):
     user_id = message.from_user.id  # Get the user's ID
     text = message.text  # Get the text of the button they clicked
-    if user_data.get(user_id, {}).get("check_if_invite", False):
+
+    # Initialize user data if not already initialized
+    if user_id not in user_data:
+        user_data[user_id] = {
+            "name": message.from_user.first_name,  # Save first name
+            "invite": 0,
+            "sold": 0,
+            "phone": '',
+            "Bonus": 0,
+            "subscribed": True,
+            "check_if_invite": False,
+            "invited_message": '',
+            "invitedId": None
+        }
+
+    if user_data[user_id].get("check_if_invite", False):
         # CHECK IF GUEST SUCCESSFULLY LOGGED IN
         await message.answer(user_data[user_id]["invited_message"])
         user_data[user_id]["check_if_invite"] = False  # Reset the flag after sending the message
 
     # Check if the user is expected to input their phone number
-    if user_data.get(user_id, {}).get("awaiting_phone", False):
+    if user_data[user_id].get("awaiting_phone", False):
         if text.isdigit() and len(text) >= 9:  # Validate phone number (basic check for digits and length)
             user_data[user_id]["phone"] = text  # Save the phone number
             user_data[user_id]["awaiting_phone"] = False  # Mark that phone input is complete
@@ -162,7 +177,7 @@ async def keyboard_answers(message: Message):
 
     # Handle "Inviter 🧑‍🤝‍🧑" button
     elif text == "Inviter 🧑‍🤝‍🧑":
-        invite_link = "https://t.me/YoutubeComunityBot?start={user_id}"
+        invite_link = f"https://t.me/YoutubeComunityBot?start={user_id}"
         # Replace with your bot's username
         await message.answer(
             f"🔗 Votre lien d'invitation :\n{invite_link}\n\n"
