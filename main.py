@@ -162,7 +162,8 @@ async def keyboard_answers(message: Message):
 
     # Handle "Inviter 🧑‍🤝‍🧑" button
     elif text == "Inviter 🧑‍🤝‍🧑":
-        invite_link = f"https://t.me/@YoutubeComunityBot?start={user_id}"  # Replace with your bot's username
+        invite_link = "https://t.me/YoutubeComunityBot?start={user_id}"
+        # Replace with your bot's username
         await message.answer(
             f"🔗 Votre lien d'invitation :\n{invite_link}\n\n"
             "🎯 Partagez ce lien pour gagner 1 000 FCFA par ami invité ! 💸"
