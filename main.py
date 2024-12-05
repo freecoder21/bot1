@@ -3,8 +3,6 @@ from aiogram import Bot, Dispatcher, Router  # Importing necessary modules for t
 from aiogram.filters import CommandStart  # To handle the "/start" command
 from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton  # To create messages and buttons
 from aiogram.exceptions import TelegramBadRequest
-import aiohttp
-
 
 TOKEN = "7807538479:AAE1SzsrjS0t8JcqXai7UUhs4qFOE7Yp8WI"
 CHANNEL_ID = -1002340148619
@@ -29,7 +27,7 @@ button6 = KeyboardButton(text="🤷comment ça marche💡") # Button to see how 
 # Setting up the reply keyboard layout
 subscrib_keyboard = ReplyKeyboardMarkup(
     keyboard=[[subscribe_button]],
-    resize_keyboard= True
+    resize_keyboard=True
 )
 keyboard1 = ReplyKeyboardMarkup(
     keyboard=[
@@ -44,73 +42,79 @@ keyboard1 = ReplyKeyboardMarkup(
 @router.message(CommandStart())
 async def start_command_handler(message: Message, command: CommandStart):
     user_id = message.from_user.id  # Get the user's unique Telegram ID
-    member = await bot.get_chat_member(CHANNEL_ID,user_id)
+    inviter_id = int(command.args) if command.args else None  # Parse inviter ID from the command args
 
-    inviter_id = None
-    if command.args:
-        inviter_id = int(command.args)  # Process the argument
-    else:
-        inviter_id = None  # Default to None if no arguments provided
-    while member.status not in ["member", "administrator", "creator"]:
-            # Send invite link message
-            await message.answer(
-                f"❗ Vous devez rejoindre notre canal avant d'utiliser le bot.\n\n"
-                f"🔗 [Cliquez ici pour rejoindre notre canal]({CHANNEL_INVITE_LINK})",
-                parse_mode="Markdown"
-                )
-
-    if member.status in ["member", "administrator", "creator"]:
-        if user_id not in user_data:
-            user_data[user_id] = {
-                "name": message.from_user.first_name,  # Save first name
-                "invite": 0,
-                "sold": 0,
-                "phone": '',
-                "Bonus": 0,
-                "subscribed": False,
-                "check_if_invite": False,
-                "invited_message": '',
-                "invitedId": inviter_id
-            }
-        welcome_message = f"""
-           🎉 **Bienvenue, {message.from_user.first_name} !** 🎉  
-          🚀 Prêt à démarrer votre aventure pour gagner et grandir avec nous ?  
-
-           🌟 **Voici comment commencer :**  
-           1️⃣ Invitez vos amis avec votre lien de parrainage unique.  
-           2️⃣ Gagnez des récompenses à chaque nouvel inscrit !  
-           3️⃣ Consultez vos statistiques à tout moment dans le tableau de bord.  
-
-           💰 **Plus vous invitez, plus vous gagnez !**  
-           🔥 Prêt à débloquer vos premiers 1 000 points bonus ? Allons-y !  
-
-           🎯 Appuyez sur les boutons ci-dessous pour explorer et commencer à gagner dès aujourd'hui.  
-          📲 **Bonnes gains et amusez-vous !** 😊
-                           """
-        if inviter_id:
-            user_data[inviter_id]['invite']+=1
-            user_data[inviter_id]['sold']+=1000
-            user_data[inviter_id]["check_if_invite"] = True
-            user_data[inviter_id]['invited_message'] = (
-                f"🎉 Félicitations ! La personne que vous avez invitée a rejoint avec succès. 🥳\n"
-                f"🔄 Vos détails de compte mis à jour :\n"
-                f"👥 Invitations : {user_data[inviter_id]['invite']}\n"
-                f"💰 Solde : {user_data[inviter_id]['sold']}"
-              )
+    # Check if the user is a member of the required channel
+    try:
+        member = await bot.get_chat_member(CHANNEL_ID, user_id)
+    except TelegramBadRequest:
         await message.answer(
-            welcome_message,
-            reply_markup=keyboard1
-           )
+            "❗ Impossible de vérifier l'adhésion au canal. Veuillez réessayer plus tard."
+        )
+        return
 
+    if member.status not in ["member", "administrator", "creator"]:
+        # User is not a member; send an invitation message
+        await message.answer(
+            f"❗ Vous devez rejoindre notre canal avant d'utiliser le bot.\n\n"
+            f"🔗 [Cliquez ici pour rejoindre notre canal]({CHANNEL_INVITE_LINK})",
+            parse_mode="Markdown",
+            reply_markup=subscrib_keyboard
+        )
+        return  # Stop further processing
+
+    # User is a member; proceed with initialization
+    if user_id not in user_data:
+        user_data[user_id] = {
+            "name": message.from_user.first_name,  # Save first name
+            "invite": 0,
+            "sold": 0,
+            "phone": '',
+            "Bonus": 0,
+            "subscribed": True,
+            "check_if_invite": False,
+            "invited_message": '',
+            "invitedId": inviter_id
+        }
+
+    if inviter_id and inviter_id in user_data:
+        user_data[inviter_id]["invite"] += 1
+        user_data[inviter_id]["sold"] += 1000
+        user_data[inviter_id]["check_if_invite"] = True
+        user_data[inviter_id]["invited_message"] = (
+            f"🎉 Félicitations ! La personne que vous avez invitée a rejoint avec succès. 🥳\n"
+            f"🔄 Vos détails de compte mis à jour :\n"
+            f"👥 Invitations : {user_data[inviter_id]['invite']}\n"
+            f"💰 Solde : {user_data[inviter_id]['sold']} FCFA"
+        )
+
+    welcome_message = f"""
+            🎉 **Bienvenue, {message.from_user.first_name} !** 🎉  
+            🚀 Prêt à démarrer votre aventure pour gagner et grandir avec nous ?  
+            
+            🌟 **Voici comment commencer :**  
+            1️⃣ Invitez vos amis avec votre lien de parrainage unique.  
+            2️⃣ Gagnez des récompenses à chaque nouvel inscrit !  
+            3️⃣ Consultez vos statistiques à tout moment dans le tableau de bord.  
+            
+            💰 **Plus vous invitez, plus vous gagnez !**  
+            🔥 Prêt à débloquer vos premiers 1 000 points bonus ? Allons-y !  
+            
+            🎯 Appuyez sur les boutons ci-dessous pour explorer et commencer à gagner dès aujourd'hui.  
+            📲 **Bonnes gains et amusez-vous !** 😊
+            """
+    await message.answer(welcome_message, reply_markup=keyboard1)
 
 # Handle user interactions with the keyboard buttons
 @router.message()
 async def keyboard_answers(message: Message):
     user_id = message.from_user.id  # Get the user's ID
     text = message.text  # Get the text of the button they clicked
-    if user_data[user_id]["check_if_invite"]:
-        # CHECK IF GUEST SUCCESSFULY LOGIN
+    if user_data.get(user_id, {}).get("check_if_invite", False):
+        # CHECK IF GUEST SUCCESSFULLY LOGGED IN
         await message.answer(user_data[user_id]["invited_message"])
+        user_data[user_id]["check_if_invite"] = False  # Reset the flag after sending the message
+
     # Check if the user is expected to input their phone number
     if user_data.get(user_id, {}).get("awaiting_phone", False):
         if text.isdigit() and len(text) >= 9:  # Validate phone number (basic check for digits and length)
@@ -127,9 +131,9 @@ async def keyboard_answers(message: Message):
             # SENDING PAYMENT MESSAGES TO THE CHANNEL
             payment_message = (
                 f"💸 Nouvelle Demande de Paiement Réussie !**\n\n"
-                f"👤 Utilisateur** : {user_data[user_id]['name']}\n"
+                f"👤 Utilisateur : {user_data[user_id]['name']}\n"
                 f"📱  Numéro : {hidden_phone}\n"
-                f"🏦 Méthode de Paiement** : Mobile Payment\n"
+                f"🏦 Méthode de Paiement : Mobile Payment\n"
                 f"💳 Montant : {user_data[user_id]['sold']} FCFA\n\n"
                 f"✅ STATUS : APPROUVÉ ✅"
             )
@@ -155,7 +159,7 @@ async def keyboard_answers(message: Message):
 
     # Handle "Inviter 🧑‍🤝‍🧑" button
     elif text == "Inviter 🧑‍🤝‍🧑":
-        invite_link = f"https://t.me/YoutubeComunityBot?start={user_id}"  # Generate invite link
+        invite_link = f"https://t.me/YourBotUsername?start={user_id}"  # Replace with your bot's username
         await message.answer(
             f"🔗 Votre lien d'invitation :\n{invite_link}\n\n"
             "🎯 Partagez ce lien pour gagner 1 000 FCFA par ami invité ! 💸"
@@ -169,11 +173,11 @@ async def keyboard_answers(message: Message):
         else:
             remaining_amount = 10000 - user_data[user_id]['sold']  # Calculate amount needed
             await message.answer(
-           f"❗ Solde insuffisant.\n"
-            f"💰 Votre solde actuel : {user_data[user_id]['sold']} FCFA\n"
-            f"🚀 Il vous manque seulement {remaining_amount} FCFA pour effectuer un retrait !\n"
-            f"🔗 Continuez à inviter vos amis pour atteindre le montant nécessaire et profitez de vos gains !"
-)
+                f"❗ Solde insuffisant.\n"
+                f"💰 Votre solde actuel : {user_data[user_id]['sold']} FCFA\n"
+                f"🚀 Il vous manque seulement {remaining_amount} FCFA pour effectuer un retrait !\n"
+                f"🔗 Continuez à inviter vos amis pour atteindre le montant nécessaire et profitez de vos gains !"
+            )
 
     # Handle "Bonus 💰" button
     elif text == "Bonus 💰":
@@ -181,10 +185,10 @@ async def keyboard_answers(message: Message):
             user_data[user_id]["sold"] += 300  # Add bonus to balance
             user_data[user_id]["Bonus"] = 1  # Mark bonus as claimed
             await message.answer(
-            f"🎉 Félicitations ! Vous avez reçu un bonus de 300 FCFA !\n"
-            f"💰 Votre nouveau solde : {user_data[user_id]['sold']} FCFA\n"
-            f"🚀 Invitez encore plus d'amis pour obtenir des bonus supplémentaires et faire croître votre solde !"
-)
+                f"🎉 Félicitations ! Vous avez reçu un bonus de 300 FCFA !\n"
+                f"💰 Votre nouveau solde : {user_data[user_id]['sold']} FCFA\n"
+                f"🚀 Invitez encore plus d'amis pour obtenir des bonus supplémentaires et faire croître votre solde !"
+            )
         else:
             await message.answer("❗ Bonus déjà réclamé.")
 
@@ -219,7 +223,8 @@ async def keyboard_answers(message: Message):
 
 # Main function to start the bot
 async def main():
-    print("Bot is starting...")  # Print a message to the console
+    print("Bot is starting...")
+    await bot.delete_webhook()  # Delete any existing webhook
     dp.include_router(router)  # Add the router to the dispatcher
     await dp.start_polling(bot)  # Start listening for updates
 
