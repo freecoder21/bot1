@@ -1,10 +1,10 @@
 import asyncio
-import os 
-from aiogram import Bot, Dispatcher, Router  # Importing necessary modules for the Telegram bot
-from aiogram.filters import CommandStart  # To handle the "/start" command
-from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton  # To create messages and buttons
+import os
+from aiohttp import web
+from aiogram import Bot, Dispatcher, Router
+from aiogram.filters import CommandStart
+from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton
 from aiogram.exceptions import TelegramBadRequest
-
 TOKEN = os.environ.get('BOT_TOKEN')
 CHANNEL_ID = -1002340148619
 CHANNEL_INVITE_LINK = "https://t.me/+tKtZNXcN96E1N2Q0"
