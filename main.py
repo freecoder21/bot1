@@ -222,14 +222,29 @@ async def keyboard_answers(message: Message):
             "⚡ **Astuce :** Utilisez le bot régulièrement et partagez votre lien pour maximiser vos revenus. Plus vous invitez, plus vous gagnez ! 💪"
         )
 
-# Main function to start the bot
+async def dummy_handler(request):
+    return web.Response(text="Telegram bot running")
+
+async def start_background_task(app):
+    #Start the aiohttp server in the background to satisfy Render's requirement for port binding.
+    runner = web.AppRunner(app)
+    await runner.setup()
+    site = web.TCPSite(runner, '0.0.0.0', int(os.environ.get('PORT', 8080)))  #Port set by Render environment variable
+    await site.start()
+    print("Dummy web server started on port:", site.port)
+
+
 async def main():
     print("Bot is starting...")
-    await bot.delete_webhook()  # Delete any existing webhook
-    dp.include_router(router)  # Add the router to the dispatcher
-    await dp.start_polling(bot)  # Start listening for updates
-    
+    await bot.delete_webhook()
+    dp.include_router(router)
 
-# Run the main function if this file is executed
+    # Create a minimal aiohttp app for Render
+    app = web.Application()
+    app.add_routes([web.get('/', dummy_handler)])
+    app.on_startup.append(start_background_task)
+
+    await dp.start_polling(bot)
+
 if __name__ == "__main__":
     asyncio.run(main())
