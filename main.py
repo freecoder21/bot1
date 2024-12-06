@@ -1,7 +1,5 @@
 import asyncio
-import os
-from aiohttp import web
-
+import os 
 from aiogram import Bot, Dispatcher, Router  # Importing necessary modules for the Telegram bot
 from aiogram.filters import CommandStart  # To handle the "/start" command
 from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton  # To create messages and buttons
@@ -71,7 +69,7 @@ async def start_command_handler(message: Message, command: CommandStart):
         user_data[user_id] = {
             "name": message.from_user.first_name,  # Save first name
             "invite": 0,
-            "sold": 0,
+            "sold": 10000,
             "phone": '',
             "Bonus": 0,
             "subscribed": True,
@@ -113,28 +111,13 @@ async def start_command_handler(message: Message, command: CommandStart):
 async def keyboard_answers(message: Message):
     user_id = message.from_user.id  # Get the user's ID
     text = message.text  # Get the text of the button they clicked
-
-    # Initialize user data if not already initialized
-    if user_id not in user_data:
-        user_data[user_id] = {
-            "name": message.from_user.first_name,  # Save first name
-            "invite": 0,
-            "sold": 0,
-            "phone": '',
-            "Bonus": 0,
-            "subscribed": True,
-            "check_if_invite": False,
-            "invited_message": '',
-            "invitedId": None
-        }
-
-    if user_data[user_id].get("check_if_invite", False):
+    if user_data.get(user_id, {}).get("check_if_invite", False):
         # CHECK IF GUEST SUCCESSFULLY LOGGED IN
         await message.answer(user_data[user_id]["invited_message"])
         user_data[user_id]["check_if_invite"] = False  # Reset the flag after sending the message
 
     # Check if the user is expected to input their phone number
-    if user_data[user_id].get("awaiting_phone", False):
+    if user_data.get(user_id, {}).get("awaiting_phone", False):
         if text.isdigit() and len(text) >= 9:  # Validate phone number (basic check for digits and length)
             user_data[user_id]["phone"] = text  # Save the phone number
             user_data[user_id]["awaiting_phone"] = False  # Mark that phone input is complete
@@ -177,8 +160,7 @@ async def keyboard_answers(message: Message):
 
     # Handle "Inviter 🧑‍🤝‍🧑" button
     elif text == "Inviter 🧑‍🤝‍🧑":
-        invite_link = f"https://t.me/YoutubeComunityBot?start={user_id}"
-        # Replace with your bot's username
+        invite_link = "https://t.me/YoutubeComunityBot?start={user_id}"  # Replace with your bot's username
         await message.answer(
             f"🔗 Votre lien d'invitation :\n{invite_link}\n\n"
             "🎯 Partagez ce lien pour gagner 1 000 FCFA par ami invité ! 💸"
@@ -246,25 +228,7 @@ async def main():
     await bot.delete_webhook()  # Delete any existing webhook
     dp.include_router(router)  # Add the router to the dispatcher
     await dp.start_polling(bot)  # Start listening for updates
-
-    # Create a simple aiohttp web server
-    async def handle(request):
-        return web.Response(text="Hello, World!")
-
-    app = web.Application()
-    app.router.add_get('/', handle)
-
-    # Get the port from the environment variable
-    port = int(os.environ.get('PORT', 8080))
-    runner = web.AppRunner(app)
-    await runner.setup()
-    site = web.TCPSite(runner, '0.0.0.0', port)
-    await site.start()
-    print(f"Server started at http://0.0.0.0:{port}")
-
-    # Keep the server running
-    while True:
-        await asyncio.sleep(3600)
+    
 
 # Run the main function if this file is executed
 if __name__ == "__main__":
